@@ -31,7 +31,7 @@ SETUP_INFO = dict(
     entry_points = {
         'console_scripts': ${project:console_scripts},
         'gui_scripts': [],
-        'nose.plugins': ['${project:name} = ${project:name}:TracebackPlugin', ],
+        'nose.plugins': ['${project:name} = ${project:name}:NosePlugin', ],
         },
     )
 
