@@ -44,4 +44,4 @@ parts/*.wixpdb
 parts/*.msi
 
 
-src/infi/nose_plugins/traceback/__version__.py
+src/infi/nose/traceback/__version__.py
