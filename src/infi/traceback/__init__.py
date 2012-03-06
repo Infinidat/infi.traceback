@@ -1,41 +1,34 @@
 __import__("pkg_resources").declare_namespace(__name__)
 
 import sys
-import os
-import logging
 import nose
 import mock
 import traceback
 import linecache
 import types
 import mock
+import infi.pyutils.contexts
 
-logger = logging.getLogger(__name__)
-
-class TracebackPlugin(nose.plugins.Plugin):
-    name = 'infi-nose-traceback'
-
-    def configure(self, options, conf):
-        super(TracebackPlugin, self).configure(options, conf)
-        self.enabled = True
+class NosePlugin(nose.plugins.Plugin):
+    name = 'infi-traceback'
 
     def prepareTestResult(self, result):
-        result.addError = TracebackFormatter(result.addError)
-        result.addFailure = TracebackFormatter(result.addFailure)
+        result.addError = traceback_decorator(result.addError)
+        result.addFailure = traceback_decorator(result.addFailure)
         return result
 
-class TracebackFormatter(object):
-    def __init__(self, func):
-        self._func = func
+def traceback_decorator(func):
+    @infi.pyutils.contexts.wraps(func)
+    def callee(*args, **kwargs):
+        with traceback_context():
+            return func(*args, **kwargs)
+    return callee
 
-    def _side_effect(self, *args, **kwargs):
-        return_value = format_tb(*args, **kwargs)
-        return return_value
-
-    def __call__(self, err, test):
-        with mock.patch("traceback.format_tb") as patch:
-            patch.side_effect = self._side_effect
-            return self._func(err, test)
+@infi.pyutils.contexts.contextmanager
+def traceback_context():
+    with mock.patch("traceback.format_tb") as patch:
+        patch.side_effect = format_tb
+        yield
 
 # Taken from Python 2.7.2 traceback module
 
