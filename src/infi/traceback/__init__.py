@@ -12,6 +12,9 @@ import infi.pyutils.contexts
 class NosePlugin(nose.plugins.Plugin):
     name = 'infi-traceback'
 
+    def help(self):
+        return "Print better tracebacks"
+
     def prepareTestResult(self, result):
         result.addError = traceback_decorator(result.addError)
         result.addFailure = traceback_decorator(result.addFailure)
