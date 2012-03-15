@@ -10,7 +10,11 @@ import mock
 import infi.pyutils.contexts
 
 class NosePlugin(nose.plugins.Plugin):
+    """better tracebacks"""
     name = 'infi-traceback'
+
+    def help(self):
+        return "Print better tracebacks"
 
     def prepareTestResult(self, result):
         result.addError = traceback_decorator(result.addError)
@@ -58,6 +62,12 @@ def extract_tb(tb, limit = None):
         n = n+1
     return list
 
+def safe_repr(obj):
+    try:
+        return repr(obj)
+    except:
+        return object.__repr__(obj)
+
 def format_list(extracted_list):
     list = []
     for filename, lineno, name, line, _locals in extracted_list:
@@ -67,7 +77,7 @@ def format_list(extracted_list):
         if _locals:
             item = item + '  Local variables:\n'
             for key,value in _locals.items():
-                item = item + '    %r: %r\n' % (key, value)
+                item = item + '    %r: %r\n' % (safe_repr(key), safe_repr(value))
         list.append(item)
     return list
 
