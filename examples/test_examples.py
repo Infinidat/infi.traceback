@@ -1,5 +1,12 @@
 import unittest
 
+class Object(object):
+    pass
+
+class BadRepr(Object):
+    def __repr__(self):
+        raise Exception()
+
 class TestCase(unittest.TestCase):
     def test_that_fails(self):
         self.fail()
@@ -21,3 +28,8 @@ class TestCase(unittest.TestCase):
     def test_exception_with_locals_modified__repred(self):
         locals()["'foo'"] = "bar"
         raise Exception()
+
+    def test_bad_repr(self):
+        obj = BadRepr()
+        raise RuntimeError()
+
