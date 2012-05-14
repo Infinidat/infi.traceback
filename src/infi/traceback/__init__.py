@@ -92,7 +92,7 @@ def format_list(extracted_list):
         if _locals:
             item = item + '  Local variables:\n'
             for key, value in _locals.items():
-                item = item + '    %r: %r\n' % (safe_repr(key), safe_repr(value))
+                item = item + '    %r: %r\n' % (key, safe_repr(value))
         list.append(item)
     return list
 
