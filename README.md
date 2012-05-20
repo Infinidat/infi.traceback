@@ -77,5 +77,5 @@ In order to generate these, run:
 
 In our development environment, we use isolated python builds, by running the following instead of the last command:
 
-   bin/buildout install development-scripts
+    bin/buildout install development-scripts
 
