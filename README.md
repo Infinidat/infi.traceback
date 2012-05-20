@@ -6,6 +6,8 @@ This module adds this capacbility to the traceback module by monkeypatching.
 Usage
 -----
 
+Here's an example on how to use this module:
+
 ```python
 from infi.traceback import traceback_context, traceback_decorator
 
@@ -34,6 +36,33 @@ def test_context():
 test_decorator()
 test_context()
 ```
+
+This prints:
+
+    Traceback (most recent call last):
+      File "examples/readme_example.py", line 14, in test_decorator
+        call()
+
+      File "examples/readme_example.py", line 9, in call
+        raise RuntimeError()
+      Local variables:
+        'text': 'some text'
+        'boolean': True
+        'obj': <object object at 0x100283200>
+
+    RuntimeError
+    Traceback (most recent call last):
+      File "examples/readme_example.py", line 21, in test_context
+        call()
+
+      File "examples/readme_example.py", line 9, in call
+        raise RuntimeError()
+      Local variables:
+        'text': 'some text'
+        'boolean': True
+        'obj': <object object at 0x100283210>
+
+    RuntimeError
 
 Checking out the code
 =====================
