@@ -38,7 +38,7 @@ test_context()
 ```
 
 This prints:
-
+```python
     Traceback (most recent call last):
       File "examples/readme_example.py", line 14, in test_decorator
         call()
@@ -63,6 +63,7 @@ This prints:
         'obj': <object object at 0x100283210>
 
     RuntimeError
+```
 
 Checking out the code
 =====================
