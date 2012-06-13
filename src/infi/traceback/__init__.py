@@ -7,6 +7,7 @@ import linecache
 import types
 import mock
 import infi.pyutils.contexts
+import infi.exceptools
 
 class NosePlugin(nose.plugins.Plugin):
     """better tracebacks"""
@@ -33,6 +34,18 @@ def traceback_context():
         patched_format_tb.side_effect = format_tb
         patched_print_tb.side_effect = print_tb
         yield
+
+def pretty_traceback_and_exit_decorator(func):
+    @wraps(func)
+    def callee(*args, **kwargs):
+        with traceback_context():
+            try:
+                return func(*args, **kwargs)
+            except:
+                import traceback
+                traceback.print_exc()
+                raise chain(SystemExit(1))
+    return callee
 
 # Taken from Python 2.7.2 traceback module
 
