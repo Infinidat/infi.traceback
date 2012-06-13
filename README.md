@@ -65,6 +65,16 @@ This prints:
     RuntimeError
 ```
 
+A common is use-case is to have a pretty traceback when an un-caught exeption is raised by a console script entry point. For that, you can use:
+
+```python
+from infi.traceback import pretty_traceback_and_exit_decorator
+
+@pretty_traceback_and_exit_decorator
+def entrypoint():
+    pass
+```
+
 Checking out the code
 =====================
 
