@@ -36,7 +36,7 @@ def traceback_context():
         yield
 
 def pretty_traceback_and_exit_decorator(func):
-    @wraps(func)
+    @infi.pyutils.contexts.wraps(func)
     def callee(*args, **kwargs):
         with traceback_context():
             try:
@@ -44,7 +44,7 @@ def pretty_traceback_and_exit_decorator(func):
             except:
                 import traceback
                 traceback.print_exc()
-                raise chain(SystemExit(1))
+                raise infi.exceptools.chain(SystemExit(1))
     return callee
 
 # Taken from Python 2.7.2 traceback module
