@@ -28,9 +28,11 @@ SETUP_INFO = dict(
     include_package_data = True,
     zip_safe = False,
 
-    entry_points = dict(
-        console_scripts = ${project:console_scripts},
-        gui_scripts = []),
+    entry_points = {
+        'console_scripts': ${project:console_scripts},
+        'gui_scripts': [],
+        'nose.plugins': ['${project:name} = ${project:name}:NosePlugin', ],
+        },
     )
 
 def setup():
