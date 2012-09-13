@@ -45,7 +45,7 @@ def traceback_context():
     with mock.patch("traceback.format_tb") as patched_format_tb, mock.patch("traceback.print_tb") as patched_print_tb, mock.patch("traceback.format_exception") as patched_format_exception:
         patched_format_tb.side_effect = format_tb
         patched_print_tb.side_effect = print_tb
-        patched_format_exception.side_effect = infi_format_exception
+        patched_format_exception.side_effect = format_exception
         yield
 
 def pretty_traceback_and_exit_decorator(func):
@@ -122,7 +122,7 @@ def format_list(extracted_list):
         list.append(item)
     return list
 
-def infi_format_exception(etype, value, tb, limit = None):
+def format_exception(etype, value, tb, limit = None):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
