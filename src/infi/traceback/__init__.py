@@ -13,14 +13,26 @@ class NosePlugin(nose.plugins.Plugin):
     """better tracebacks"""
     name = 'infi-traceback'
 
+    def __init__(self):
+        super(NosePlugin, self).__init__()
+        self.active_context = None
+
     def help(self):
         return "Print better tracebacks"
 
-    def prepareTestResult(self, result):
-        result.addError = traceback_decorator(result.addError)
-        result.addFailure = traceback_decorator(result.addFailure)
-        return result
-
+    def startContext(self, context):
+        if self.active_context is not None:
+            return
+        self.active_context = context
+        self.traceback_context = traceback_context()
+        self.traceback_context.__enter__()
+    
+    def stopContext(self, context):
+        if not self.active_context is context:
+            return
+        self.active_context = None
+        self.traceback_context.__exit__(None, None, None)
+    
 def traceback_decorator(func):
     @infi.pyutils.contexts.wraps(func)
     def callee(*args, **kwargs):
@@ -30,9 +42,10 @@ def traceback_decorator(func):
 
 @infi.pyutils.contexts.contextmanager
 def traceback_context():
-    with mock.patch("traceback.format_tb") as patched_format_tb, mock.patch("traceback.print_tb") as patched_print_tb:
+    with mock.patch("traceback.format_tb") as patched_format_tb, mock.patch("traceback.print_tb") as patched_print_tb, mock.patch("traceback.format_exception") as patched_format_exception:
         patched_format_tb.side_effect = format_tb
         patched_print_tb.side_effect = print_tb
+        patched_format_exception.side_effect = format_exception
         yield
 
 def pretty_traceback_and_exit_decorator(func):
@@ -109,3 +122,20 @@ def format_list(extracted_list):
         list.append(item)
     return list
 
+def format_exception(etype, value, tb, limit = None):
+    """Format a stack trace and the exception information.
+
+    The arguments have the same meaning as the corresponding arguments
+    to print_exception().  The return value is a list of strings, each
+    ending in a newline and some containing internal newlines.  When
+    these lines are concatenated and printed, exactly the same text is
+    printed as does print_exception().
+    """
+    import traceback
+    if tb:
+        list = ['Traceback (most recent call last):\n']
+        list = list + format_tb(tb, limit)
+    else:
+        list = []
+    list = list + traceback.format_exception_only(etype, value)
+    return list
