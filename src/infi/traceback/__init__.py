@@ -52,10 +52,13 @@ def pretty_traceback_and_exit_decorator(func):
     @infi.pyutils.contexts.wraps(func)
     def callee(*args, **kwargs):
         with traceback_context():
+            import traceback
             try:
                 return func(*args, **kwargs)
+            except SystemExit:
+                traceback.print_exc()
+                raise
             except:
-                import traceback
                 traceback.print_exc()
                 raise infi.exceptools.chain(SystemExit(1))
     return callee
