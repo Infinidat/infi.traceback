@@ -9,6 +9,8 @@ import mock
 import infi.pyutils.contexts
 import infi.exceptools
 
+truncate_repr = None
+
 class NosePlugin(nose.plugins.Plugin):
     """better tracebacks"""
     name = 'infi-traceback'
@@ -33,13 +35,6 @@ class NosePlugin(nose.plugins.Plugin):
         self.active_context = None
         self.traceback_context.__exit__(None, None, None)
     
-def traceback_decorator(func):
-    @infi.pyutils.contexts.wraps(func)
-    def callee(*args, **kwargs):
-        with traceback_context():
-            return func(*args, **kwargs)
-    return callee
-
 @infi.pyutils.contexts.contextmanager
 def traceback_context():
     with mock.patch("traceback.format_tb") as patched_format_tb, mock.patch("traceback.print_tb") as patched_print_tb, mock.patch("traceback.format_exception") as patched_format_exception:
@@ -47,6 +42,13 @@ def traceback_context():
         patched_print_tb.side_effect = print_tb
         patched_format_exception.side_effect = format_exception
         yield
+
+def traceback_decorator(func):
+    @infi.pyutils.contexts.wraps(func)
+    def callee(*args, **kwargs):
+        with traceback_context():
+            return func(*args, **kwargs)
+    return callee
 
 def pretty_traceback_and_exit_decorator(func):
     @infi.pyutils.contexts.wraps(func)
@@ -106,11 +108,19 @@ def extract_tb(tb, limit=None):
         n = n + 1
     return list
 
+def set_truncation_limit(limit):
+    global truncate_repr
+    assert limit is None or (isinstance(limit, int) and limit > 0)
+    truncate_repr = limit
+
 def safe_repr(obj):
     try:
-        return repr(obj)
+        res = repr(obj)
+        if truncate_repr is not None and len(res) > truncate_repr:
+            res = "<repr truncated: %s>" % (object.__repr__(obj), )
     except:
-        return object.__repr__(obj)
+        res = "<repr fallback: %s>" % (object.__repr__(obj), )
+    return res
 
 def format_list(extracted_list):
     list = []
