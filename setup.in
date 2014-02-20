@@ -5,7 +5,7 @@ SETUP_INFO = dict(
     author = '${infi.recipe.template.version:author}',
     author_email = '${infi.recipe.template.version:author_email}',
 
-    url = 'http://www.infinidat.com',
+    url = ${infi.recipe.template.version:homepage},
     license = 'PSF',
     description = """${project:description}""",
     long_description = """${project:long_description}""",
@@ -28,12 +28,14 @@ SETUP_INFO = dict(
     include_package_data = True,
     zip_safe = False,
 
-    entry_points = {
-        'console_scripts': ${project:console_scripts},
-        'gui_scripts': [],
-        'nose.plugins': ['${project:name} = ${project:name}:NosePlugin', ],
-        },
-    )
+    entry_points = dict(
+        console_scripts = ${project:console_scripts},
+        gui_scripts = ${project:gui_scripts},
+        ),
+)
+
+if SETUP_INFO['url'] is None:
+    _ = SETUP_INFO.pop('url')
 
 def setup():
     from setuptools import setup as _setup
