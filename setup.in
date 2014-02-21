@@ -37,6 +37,8 @@ SETUP_INFO = dict(
 if SETUP_INFO['url'] is None:
     _ = SETUP_INFO.pop('url')
 
+SETUP_INFO['entry_points']['nose.plugins'] = ['${project:name} = ${project:name}:NosePlugin']
+
 def setup():
     from setuptools import setup as _setup
     from setuptools import find_packages
