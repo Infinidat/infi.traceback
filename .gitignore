@@ -47,3 +47,4 @@ parts/*.msi
 src/infi/traceback/__version__.py
 bootstrap.py
 .cache
+eggs
