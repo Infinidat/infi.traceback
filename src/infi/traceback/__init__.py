@@ -28,19 +28,23 @@ class NosePlugin(nose.plugins.Plugin):
         self.active_context = context
         self.traceback_context = traceback_context()
         self.traceback_context.__enter__()
-    
+
     def stopContext(self, context):
         if not self.active_context is context:
             return
         self.active_context = None
         self.traceback_context.__exit__(None, None, None)
-    
+
 @infi.pyutils.contexts.contextmanager
 def traceback_context():
-    with mock.patch("traceback.format_tb") as patched_format_tb, mock.patch("traceback.print_tb") as patched_print_tb, mock.patch("traceback.format_exception") as patched_format_exception:
+    with mock.patch("traceback.format_tb") as patched_format_tb, \
+         mock.patch("traceback.print_tb") as patched_print_tb, \
+         mock.patch("traceback.format_exception") as patched_format_exception, \
+         mock.patch("traceback.print_exception") as patched_print_exception:
         patched_format_tb.side_effect = format_tb
         patched_print_tb.side_effect = print_tb
         patched_format_exception.side_effect = format_exception
+        patched_print_exception.side_effect = print_exception
         yield
 
 def traceback_decorator(func):
@@ -152,3 +156,24 @@ def format_exception(etype, value, tb, limit = None):
         list = []
     list = list + traceback.format_exception_only(etype, value)
     return list
+
+def print_exception(etype, value, tb, limit=None, file=None):
+    """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
+
+    This differs from print_tb() in the following ways: (1) if
+    traceback is not None, it prints a header "Traceback (most recent
+    call last):"; (2) it prints the exception type and value after the
+    stack trace; (3) if type is SyntaxError and value has the
+    appropriate format, it prints the line where the syntax error
+    occurred with a caret on the next line indicating the approximate
+    position of the error.
+    """
+    import traceback
+    if file is None:
+        file = sys.stderr
+    if tb:
+        traceback._print(file, 'Traceback (most recent call last):')
+        print_tb(tb, limit, file)
+    lines = traceback.format_exception_only(etype, value)
+    for line in lines:
+        traceback._print(file, line, '')
