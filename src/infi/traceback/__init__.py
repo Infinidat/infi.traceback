@@ -11,6 +11,11 @@ import infi.exceptools
 
 truncate_repr = None
 
+
+def _print(file, s='', terminator='\n'):
+    file.write(s + terminator)
+
+
 class NosePlugin(nose.plugins.Plugin):
     """better tracebacks"""
     name = 'infi-traceback'
@@ -172,8 +177,8 @@ def print_exception(etype, value, tb, limit=None, file=None):
     if file is None:
         file = sys.stderr
     if tb:
-        traceback._print(file, 'Traceback (most recent call last):')
+        _print(file, 'Traceback (most recent call last):')
         print_tb(tb, limit, file)
     lines = traceback.format_exception_only(etype, value)
     for line in lines:
-        traceback._print(file, line, '')
+        _print(file, line, '')
