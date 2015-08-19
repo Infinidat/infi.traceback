@@ -5,8 +5,10 @@ import nose
 import mock
 import linecache
 import types
+import traceback
 import mock
 import infi.pyutils.contexts
+import infi.pyutils.patch
 import infi.exceptools
 
 truncate_repr = None
@@ -37,14 +39,10 @@ class NosePlugin(nose.plugins.Plugin):
 
 @infi.pyutils.contexts.contextmanager
 def traceback_context():
-    with mock.patch("traceback.format_tb") as patched_format_tb, \
-         mock.patch("traceback.print_tb") as patched_print_tb, \
-         mock.patch("traceback.format_exception") as patched_format_exception, \
-         mock.patch("traceback.print_exception") as patched_print_exception:
-        patched_format_tb.side_effect = format_tb
-        patched_print_tb.side_effect = print_tb
-        patched_format_exception.side_effect = format_exception
-        patched_print_exception.side_effect = print_exception
+    with infi.pyutils.patch.patch(traceback, "format_tb", format_tb), \
+         infi.pyutils.patch.patch(traceback, "print_tb", print_tb), \
+         infi.pyutils.patch.patch(traceback, "format_exception", format_exception), \
+         infi.pyutils.patch.patch(traceback, "print_exception", print_exception):
         yield
 
 def traceback_decorator(func):
