@@ -155,7 +155,8 @@ def format_exception(etype, value, tb, limit = None):
     list = list + traceback.format_exception_only(etype, value)
     return list
 
-def print_exception(etype, value, tb, limit=None, file=None):
+
+def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -170,8 +171,8 @@ def print_exception(etype, value, tb, limit=None, file=None):
     if file is None:
         file = sys.stderr
     if tb:
-        traceback._print(file, 'Traceback (most recent call last):')
+        file.write('Traceback (most recent call last):\n')
         print_tb(tb, limit, file)
     lines = traceback.format_exception_only(etype, value)
     for line in lines:
-        traceback._print(file, line, '')
+        file.write(line)

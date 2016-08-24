@@ -1,6 +1,9 @@
+import sys
 import unittest
 from infi.traceback import pretty_traceback_and_exit_decorator
 from infi.traceback import set_truncation_limit
+
+PY3 = sys.version_info[0] == 3
 
 @pretty_traceback_and_exit_decorator
 def main():
@@ -28,16 +31,19 @@ class TestCase(unittest.TestCase):
     def test_system_exit(self):
         try:
             system_exit()
-        except SystemExit, error:
+        except SystemExit as error:
            self.assertEquals(error.args, (3, ))
-           
+
     def test_truncated_repr(self):
-        from StringIO import StringIO
+        if PY3:
+            from io import StringIO
+        else:
+            from StringIO import StringIO
         import sys
         @pretty_traceback_and_exit_decorator
         def func_with_variable():
             long_variable = "a very long string that we will truncate to 10 chars"
-            raise Excetion()
+            raise Exception()
         old_stderr = sys.stderr
         sys.stderr = StringIO()
         set_truncation_limit(10)
