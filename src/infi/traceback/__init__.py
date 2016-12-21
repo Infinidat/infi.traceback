@@ -52,6 +52,15 @@ def traceback_decorator(func):
             return func(*args, **kwargs)
     return callee
 
+@infi.pyutils.contexts.contextmanager
+def pretty_traceback_and_exit_context(exception_class=Exception):
+    with traceback_context():
+        try:
+            yield
+        except exception_class:
+            traceback.print_exc()
+            raise
+
 def pretty_traceback_and_exit_decorator(func):
     @infi.pyutils.contexts.wraps(func)
     def callee(*args, **kwargs):
