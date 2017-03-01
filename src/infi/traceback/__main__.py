@@ -29,7 +29,7 @@ def _runscript(filename):
     globals = __main__.__dict__
     locals = globals
 
-    exec statement in globals, locals
+    exec(statement, globals, locals)
 
 
 def main():
