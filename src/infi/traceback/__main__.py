@@ -36,12 +36,12 @@ def main():
     from . import traceback_context
 
     if not sys.argv[1:] or sys.argv[1] in ("--help", "-h"):
-        print "usage: python -m infi.traceback scriptfile [arg] ..."
+        print ("usage: python -m infi.traceback scriptfile [arg] ...")
         sys.exit(2)
 
     mainpyfile =  sys.argv[1]     # Get script filename
     if not os.path.exists(mainpyfile):
-        print 'Error:', mainpyfile, 'does not exist'
+        print ('Error: {} does not exist'.format(mainpyfile))
         sys.exit(1)
 
     del sys.argv[0]         # Hide "infi/traceback/__main__.py" from argument list
