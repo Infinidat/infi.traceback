@@ -7,11 +7,17 @@ import linecache
 import types
 import traceback
 import mock
+from functools import partial
 import infi.pyutils.contexts
 import infi.pyutils.patch
 import infi.exceptools
 
-truncate_repr = None
+# used to know if nothing was sent or None exlictly set (which means don't truncate)
+class NotSet: pass
+
+# a sane default
+truncate_repr = 500
+#truncate_repr = 10
 
 class NosePlugin(nose.plugins.Plugin):
     """better tracebacks"""
@@ -38,19 +44,30 @@ class NosePlugin(nose.plugins.Plugin):
         self.traceback_context.__exit__(None, None, None)
 
 @infi.pyutils.contexts.contextmanager
-def traceback_context():
-    with infi.pyutils.patch.patch(traceback, "format_tb", format_tb), \
-         infi.pyutils.patch.patch(traceback, "print_tb", print_tb), \
-         infi.pyutils.patch.patch(traceback, "format_exception", format_exception), \
-         infi.pyutils.patch.patch(traceback, "print_exception", print_exception):
+def traceback_context(truncation_limit=NotSet):
+    """
+    When nothing is sent, the global truncate_repr will take effect.  None means no truncation
+    """
+    with infi.pyutils.patch.patch(traceback, "format_tb", partial(format_tb, truncation_limit=truncation_limit)), \
+         infi.pyutils.patch.patch(traceback, "print_tb", partial(print_tb, truncation_limit=truncation_limit)), \
+         infi.pyutils.patch.patch(traceback, "format_exception", partial(format_exception, truncation_limit=truncation_limit)), \
+         infi.pyutils.patch.patch(traceback, "print_exception", partial(print_exception, truncation_limit=truncation_limit)):
         yield
 
-def traceback_decorator(func):
-    @infi.pyutils.contexts.wraps(func)
-    def callee(*args, **kwargs):
-        with traceback_context():
-            return func(*args, **kwargs)
-    return callee
+def traceback_decorator(arg):
+    def tb_decorator(func):
+        @infi.pyutils.contexts.wraps(func)
+        def callee(*args, **kwargs):
+            with traceback_context(truncation_limit=truncation_limit):
+                return func(*args, **kwargs)
+        return callee
+
+    if callable(arg):
+        truncation_limit = NotSet
+        return tb_decorator(arg)
+    else:
+        truncation_limit = arg
+        return tb_decorator
 
 @infi.pyutils.contexts.contextmanager
 def pretty_traceback_and_exit_context(exception_class=Exception):
@@ -61,28 +78,42 @@ def pretty_traceback_and_exit_context(exception_class=Exception):
             traceback.print_exc()
             raise
 
-def pretty_traceback_and_exit_decorator(func):
-    @infi.pyutils.contexts.wraps(func)
-    def callee(*args, **kwargs):
-        with traceback_context():
-            import traceback
-            try:
-                return func(*args, **kwargs)
-            except SystemExit:
-                traceback.print_exc()
-                raise
-            except:
-                traceback.print_exc()
-                raise infi.exceptools.chain(SystemExit(1))
-    return callee
+def pretty_traceback_and_exit_decorator(arg):
+    print('defining dec truncate_repr', truncate_repr)
+    def pretty_tb_and_exit_decorator(func):
+        print('defining dec 2 truncate_repr', truncate_repr)
+        @infi.pyutils.contexts.wraps(func)
+        def callee(*args, **kwargs):
+            print('calling func in dec truncate_repr', truncate_repr)
+            with traceback_context(truncation_limit=truncation_limit):
+                import traceback
+                print('calling func in dec2 truncate_repr', truncate_repr)
+                try:
+                    return func(*args, **kwargs)
+                except SystemExit:
+                    print('in handler 1 truncate_repr', truncate_repr)
+                    traceback.print_exc()
+                    raise
+                except:
+                    print('in handler 2 truncate_repr', truncate_repr)
+                    traceback.print_exc()
+                    raise infi.exceptools.chain(SystemExit(1))
+        return callee
+
+    if callable(arg):
+        truncation_limit = NotSet
+        return pretty_tb_and_exit_decorator(arg)
+    else:
+        truncation_limit = arg
+        return pretty_tb_and_exit_decorator
 
 # Taken from Python 2.7.2 traceback module
 
-def format_tb(tb, limit=None):
+def format_tb(tb, limit=None, truncation_limit=NotSet):
     """A shorthand for 'format_list(extract_stack(f, limit))."""
-    return format_list(extract_tb(tb, limit))
+    return format_list(extract_tb(tb, limit), truncation_limit=truncation_limit)
 
-def print_tb(tb, limit=None, file=None):
+def print_tb(tb, limit=None, file=None, truncation_limit=NotSet):
     """Print up to 'limit' stack trace entries from the traceback 'tb'.
 
     If 'limit' is omitted or None, all entries are printed.  If 'file'
@@ -95,7 +126,7 @@ def print_tb(tb, limit=None, file=None):
     if limit is None:
         if hasattr(sys, 'tracebacklimit'):
             limit = sys.tracebacklimit
-    file.write('\n'.join(format_tb(tb, limit)) + '\n')
+    file.write('\n'.join(format_tb(tb, limit, truncation_limit=truncation_limit)) + '\n')
 
 def extract_tb(tb, limit=None):
     if limit is None:
@@ -121,19 +152,26 @@ def extract_tb(tb, limit=None):
 
 def set_truncation_limit(limit):
     global truncate_repr
+    print('setting limit to', limit)
     assert limit is None or (isinstance(limit, int) and limit > 0)
     truncate_repr = limit
 
-def safe_repr(obj):
+def safe_repr(obj, truncation_limit=NotSet):
+    print('save_repr: truncation_limit', truncation_limit)
     try:
         res = repr(obj)
-        if truncate_repr is not None and len(res) > truncate_repr:
-            res = "<repr truncated: %s>" % (object.__repr__(obj), )
+        if truncation_limit == NotSet:
+            limit = truncate_repr
+        else:
+            limit = truncation_limit
+        print('safe_repr: limit', limit)
+        if limit is not None and len(res) > limit:
+            res = "(truncated) %s" % (res[:limit], )
     except:
-        res = "<repr fallback: %s>" % (object.__repr__(obj), )
+        res = "(fallback) %s" % (object.__repr__(obj), )
     return res
 
-def format_list(extracted_list):
+def format_list(extracted_list, truncation_limit=NotSet):
     list = []
     for filename, lineno, name, line, _locals in extracted_list:
         item = '  File "%s", line %d, in %s\n' % (filename, lineno, name)
@@ -142,11 +180,11 @@ def format_list(extracted_list):
         if _locals:
             item = item + '  Local variables:\n'
             for key, value in _locals.items():
-                item = item + '    %r: %s\n' % (key, safe_repr(value))
+                item = item + '    %r: %s\n' % (key, safe_repr(value, truncation_limit=truncation_limit))
         list.append(item)
     return list
 
-def format_exception(etype, value, tb, limit = None):
+def format_exception(etype, value, tb, limit = None, truncation_limit=NotSet):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -158,14 +196,14 @@ def format_exception(etype, value, tb, limit = None):
     import traceback
     if tb:
         list = ['Traceback (most recent call last):\n']
-        list = list + format_tb(tb, limit)
+        list = list + format_tb(tb, limit, truncation_limit=truncation_limit)
     else:
         list = []
     list = list + traceback.format_exception_only(etype, value)
     return list
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+def print_exception(etype, value, tb, limit=None, file=None, chain=True, truncation_limit=NotSet):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -181,7 +219,7 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
         file = sys.stderr
     if tb:
         file.write('Traceback (most recent call last):\n')
-        print_tb(tb, limit, file)
+        print_tb(tb, limit, file, truncation_limit=truncation_limit)
     lines = traceback.format_exception_only(etype, value)
     for line in lines:
         file.write(line)

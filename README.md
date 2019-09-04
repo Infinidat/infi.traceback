@@ -75,6 +75,47 @@ def entrypoint():
     pass
 ```
 
+By default, local vars will truncate at 500 characters.  This can be changed in one of two ways.
+
+Globally:
+
+```python
+from infi.traceback import set_truncation_limit
+
+set_truncation_limit(100)
+```
+
+and will affect any tracebacks that are hit and if you call it again in different places, both calls will affect the global value for everywhere else.
+
+Per call:
+
+```python
+from infi.traceback import traceback_context, traceback_decorator, pretty_traceback_and_exit_decorator
+
+
+@traceback_decorator(300)
+def test_decorator():
+    import traceback
+    try:
+        call()
+    except:
+       traceback.print_exc()
+
+def test_context():
+    with traceback_context(None):
+        import traceback
+        try:
+            call()
+        except:
+           traceback.print_exc()
+
+@pretty_traceback_and_exit_decorator(100)
+def entrypoint():
+    call()
+```
+
+This gives much more fine grained control when you might want differnt outputs for differnt parts of the code.  None means nothing will be truncated.
+
 Checking out the code
 =====================
 
