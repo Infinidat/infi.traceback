@@ -146,7 +146,7 @@ def format_list(extracted_list):
         list.append(item)
     return list
 
-def format_exception(etype, value, tb, limit = None):
+def format_exception(etype, value, tb, limit=None, chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
