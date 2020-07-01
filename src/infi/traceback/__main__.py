@@ -2,14 +2,6 @@ import os
 import sys
 
 
-def _canonic(filename):
-    if filename == "<" + filename[1:-1] + ">":
-        return filename
-    canonic = os.path.abspath(filename)
-    canonic = os.path.normcase(canonic)
-    return canonic
-
-
 def _runscript(filename):
     # The script has to run in __main__ namespace (or imports from
     # __main__ will break).
@@ -19,17 +11,28 @@ def _runscript(filename):
     import __main__
     __main__.__dict__.clear()
     __main__.__dict__.update({"__name__"    : "__main__",
-                              "__file__"    : filename,
-                              "__builtins__": __builtins__,
+                              "__file__"    : filename
                              })
 
+    # Defined here, so it will be after the clear.
+    def _canonic(filename):
+        # Reimport os after the clear.
+        import os
+
+        if filename == "<" + filename[1:-1] + ">":
+            return filename
+        canonic = os.path.abspath(filename)
+        canonic = os.path.normcase(canonic)
+        return canonic
+
     mainpyfile = _canonic(filename)
-    statement = 'execfile(%r)' % filename
 
     globals = __main__.__dict__
     locals = globals
 
-    exec(statement, globals, locals)
+    with open(filename) as f:
+        code = compile(f.read(), filename, 'exec')
+        exec(code, globals, locals)
 
 
 def main():
