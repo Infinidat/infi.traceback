@@ -1,7 +1,12 @@
 __import__("pkg_resources").declare_namespace(__name__)
 
 import sys
-import nose
+try:
+    import nose
+except ImportError:
+    # nose is unusable on Python 3.12+ (it imports the removed 'imp' module);
+    # only the optional NosePlugin below needs it
+    nose = None
 import mock
 import linecache
 import types
@@ -13,7 +18,7 @@ import infi.exceptools
 
 truncate_repr = None
 
-class NosePlugin(nose.plugins.Plugin):
+class NosePlugin(nose.plugins.Plugin if nose is not None else object):
     """better tracebacks"""
     name = 'infi-traceback'
 
@@ -146,7 +151,7 @@ def format_list(extracted_list):
         list.append(item)
     return list
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(etype, value=None, tb=None, limit=None, chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -156,6 +161,9 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     printed as does print_exception().
     """
     import traceback
+    # since Python 3.10 the stdlib calls this with just the exception instance
+    if isinstance(etype, BaseException):
+        value, tb, etype = etype, etype.__traceback__, type(etype)
     if tb:
         list = ['Traceback (most recent call last):\n']
         list = list + format_tb(tb, limit)
@@ -165,7 +173,7 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     return list
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+def print_exception(etype, value=None, tb=None, limit=None, file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -177,6 +185,9 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     position of the error.
     """
     import traceback
+    # since Python 3.10 the stdlib calls this with just the exception instance
+    if isinstance(etype, BaseException):
+        value, tb, etype = etype, etype.__traceback__, type(etype)
     if file is None:
         file = sys.stderr
     if tb:
